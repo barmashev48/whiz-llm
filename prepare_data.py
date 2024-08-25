@@ -1,16 +1,16 @@
 import os
 import torch
 from datasets import load_dataset
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 
-# Load the GPT-2 tokenizer
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+# Load the Mistral-7B tokenizer
+tokenizer = AutoTokenizer.from_pretrained("mistral-7b")
 
 # Set the end-of-sequence token as the padding token
 tokenizer.pad_token = tokenizer.eos_token
 
-# Load the pre-trained GPT-2 model
-model = GPT2LMHeadModel.from_pretrained("gpt2")
+# Load the pre-trained Mistral-7B model
+model = AutoModelForCausalLM.from_pretrained("mistral-7b", device_map="auto")
 
 # Load the full Wikipedia dataset
 dataset = load_dataset("wikipedia", "20220301.en", split="train")
@@ -30,17 +30,19 @@ data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
 # Define training arguments
 training_args = TrainingArguments(
-    output_dir="./results",
+    output_dir="./results-mistral",
     evaluation_strategy="epoch",
-    learning_rate=5e-5,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
+    learning_rate=2e-5,  
+    per_device_train_batch_size=1,  
+    per_device_eval_batch_size=1,
     num_train_epochs=1,
+    gradient_accumulation_steps=16,  
     weight_decay=0.01,
-    save_steps=10_000,  # Save model checkpoint every 10,000 steps
-    save_total_limit=2,  # Only keep the last 2 checkpoints
-    logging_dir="./logs",  # Directory for storing logs
-)
+    save_steps=10_000,  
+    save_total_limit=2,  
+    logging_dir="./logs-mistral",  
+    fp16=True,  
+    push_to_hub=False,  
 
 # Initialize the Trainer
 trainer = Trainer(
@@ -54,5 +56,5 @@ trainer = Trainer(
 trainer.train()
 
 # Save the fine-tuned model and tokenizer
-model.save_pretrained("./whiz-llm")
-tokenizer.save_pretrained("./whiz-llm")
+model.save_pretrained("./whizz-llm")
+tokenizer.save_pretrained("./whizz-llm")
